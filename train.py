@@ -45,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-cache-dir", type=str, default="generated_models")
     parser.add_argument("--project", type=str, default="runs/train")
     parser.add_argument("--name", type=str, default="")
+    parser.add_argument("--optimizer", type=str, default="SGD", help="Optimizer: SGD/Adam/AdamW/RMSProp/auto.")
     parser.add_argument("--module-a", action="store_true", help="Enable A: ECA in backbone.")
     parser.add_argument("--module-b", action="store_true", help="Enable B: P2 Detection Head.")
     parser.add_argument("--module-c", action="store_true", help="Enable C: SIoU loss.")
@@ -90,6 +91,7 @@ def main() -> None:
         device=args.device,
         workers=args.workers,
         pretrained=args.pretrained,
+        optimizer=args.optimizer,
         project=args.project,
         name=run_name,
     )

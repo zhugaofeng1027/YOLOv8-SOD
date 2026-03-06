@@ -1,16 +1,25 @@
 from __future__ import annotations
 
 import argparse
+import platform
 from pathlib import Path
 
 import yaml
-from ultralytics import YOLO
-
-from ablation import apply_siou_patch, create_model_yaml, register_custom_modules
 
 
 def _read_nc(data_yaml: str | Path) -> int:
-    with Path(data_yaml).open("r", encoding="utf-8") as f:
+    data_yaml = str(data_yaml)
+    yaml_path = Path(data_yaml)
+    if not yaml_path.exists():
+        from ultralytics.utils.checks import check_yaml
+
+        resolved = check_yaml(data_yaml, hard=False)
+        if resolved:
+            yaml_path = Path(resolved)
+        else:
+            raise FileNotFoundError(f"Dataset yaml not found: {data_yaml}")
+
+    with yaml_path.open("r", encoding="utf-8") as f:
         data_cfg = yaml.safe_load(f)
     names = data_cfg.get("names")
     if isinstance(names, list):
@@ -25,12 +34,13 @@ def _read_nc(data_yaml: str | Path) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train YOLOv8s with A/B/C ablation modules.")
-    parser.add_argument("--data", type=str, default="configs/datasets/visdrone_det.yaml", help="Dataset yaml path.")
+    parser.add_argument("--data", type=str, default="VisDrone.yaml", help="Dataset yaml path.")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--imgsz", type=int, default=640)
-    parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--batch", type=int, default=8)
     parser.add_argument("--device", type=str, default="0")
-    parser.add_argument("--workers", type=int, default=8)
+    default_workers = 0 if platform.system().lower() == "windows" else 8
+    parser.add_argument("--workers", type=int, default=default_workers)
     parser.add_argument("--pretrained", type=str, default="yolov8s.pt", help="Pretrained weight for transfer.")
     parser.add_argument("--model-cache-dir", type=str, default="generated_models")
     parser.add_argument("--project", type=str, default="runs/train")
@@ -43,6 +53,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    from ultralytics import YOLO
+    from ablation import apply_siou_patch, create_model_yaml, register_custom_modules
+
     register_custom_modules()
     if args.module_c:
         apply_siou_patch()

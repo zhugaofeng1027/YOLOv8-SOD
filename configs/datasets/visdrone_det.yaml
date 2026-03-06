@@ -1,4 +1,4 @@
-path: datasets/VisDrone2019-DET-YOLO
+path: VisDrone2019-DET-YOLO
 train: images/train
 val: images/val
 test: images/test
